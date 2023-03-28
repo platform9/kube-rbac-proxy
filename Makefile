@@ -3,6 +3,21 @@ all: check-license build generate test
 GO111MODULE=on
 export GO111MODULE
 
+BUILDDIR=$(CURDIR)
+registry_url ?= docker.io
+image_name = ${registry_url}/platform9/kube-rbac-proxy
+DOCKERFILE?=$(CURDIR)/Dockerfile
+UPSTREAM_VERSION?=$(shell git describe --tags HEAD | sed 's/-.*//' )
+image_tag = $(UPSTREAM_VERSION)-pmk-$(TEAMCITY_BUILD_ID)
+PF9_TAG=$(image_name):${image_tag}
+DOCKERARGS=
+ifdef HTTP_PROXY
+	DOCKERARGS += --build-arg http_proxy=$(HTTP_PROXY)
+endif
+ifdef HTTPS_PROXY
+	DOCKERARGS += --build-arg https_proxy=$(HTTPS_PROXY)
+endif
+
 GITHUB_URL=github.com/brancz/kube-rbac-proxy
 GOOS?=$(shell uname -s | tr A-Z a-z)
 GOARCH?=$(shell go env GOARCH)
@@ -93,3 +108,12 @@ embedmd:
 	@go get github.com/campoy/embedmd
 
 .PHONY: all check-license crossbuild build container push push-% manifest-push curl-container test generate embedmd
+
+pf9-image: | $(BUILDDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Build kube-rbac-proxy docker image
+	@docker build -t $(PF9_TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
+	echo ${PF9_TAG} > $(BUILDDIR)/container-tag
+
+pf9-push: 
+	docker login
+	docker push $(PF9_TAG)\
+	&& docker rmi $(PF9_TAG)
