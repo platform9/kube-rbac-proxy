@@ -3,8 +3,7 @@ all: check-license build generate test
 GO111MODULE=on
 export GO111MODULE
 
-BUILDDIR=$(CURDIR)
-registry_url ?= docker.io
+registry_url = docker.io
 image_name = ${registry_url}/platform9/kube-rbac-proxy
 DOCKERFILE?=$(CURDIR)/Dockerfile
 UPSTREAM_VERSION?=$(shell git describe --tags HEAD | sed 's/-.*//' )
@@ -109,9 +108,9 @@ embedmd:
 
 .PHONY: all check-license crossbuild build container push push-% manifest-push curl-container test generate embedmd
 
-pf9-image: | $(BUILDDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Build kube-rbac-proxy docker image
+pf9-image: | $(CURDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Build kube-rbac-proxy docker image
 	@docker build -t $(PF9_TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
-	echo ${PF9_TAG} > $(BUILDDIR)/container-tag
+	echo ${PF9_TAG} > $(CURDIR)/container-tag
 
 pf9-push: 
 	docker login
